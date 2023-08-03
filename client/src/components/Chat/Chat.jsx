@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import io from 'socket.io-client'
-import queryString from 'query-string'
+// import queryString from 'query-string'
 
 import InfoBar from '../InfoBar/InfoBar'
 import Messages from '../Messages/Messages'
 import Input from '../Input/Input'
+import TextContainer from '../TextContainer/TextContainer'
 
 import './Chat.css'
 
@@ -16,6 +17,7 @@ const Chat = () => {
     const [room, setRoom] = useState('')
     const [message, setMessage] = useState('')
     const [messages, setMessages] = useState([])
+    const [users, setUsers] = useState('')
     const [searchParams] = useSearchParams()
 
     const ENDPOINT = 'localhost:5000'
@@ -30,7 +32,11 @@ const Chat = () => {
         setName(name)
         setRoom(room)
 
-        socket.emit('join', { name, room }, () => {})
+        socket.emit('join', { name, room }, (error) => {
+            if (error) {
+                alert(error)
+            }
+        })
 
         return () => {
             socket.emit('disconnect')
@@ -42,6 +48,10 @@ const Chat = () => {
     useEffect(() => {
         socket.on('message', (message) => {
             setMessages([...messages, message])
+        })
+
+        socket.on('roomData', ({ users }) => {
+            setUsers(users)
         })
     }, [messages])
 
@@ -64,6 +74,7 @@ const Chat = () => {
                     sendMessage={sendMessage}
                 />
             </div>
+            <TextContainer users={users} />
         </div>
     )
 }
