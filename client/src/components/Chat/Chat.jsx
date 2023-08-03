@@ -3,11 +3,18 @@ import { useSearchParams } from 'react-router-dom'
 import io from 'socket.io-client'
 import queryString from 'query-string'
 
+import InfoBar from '../InfoBar/InfoBar'
+import Input from '../Input/Input'
+
+import './Chat.css'
+
 let socket
 
 const Chat = () => {
     const [name, setName] = useState('')
     const [room, setRoom] = useState('')
+    const [message, setMessage] = useState('')
+    const [messages, setMessages] = useState([])
     const [searchParams] = useSearchParams()
 
     const ENDPOINT = 'localhost:5000'
@@ -22,12 +29,39 @@ const Chat = () => {
         setName(name)
         setRoom(room)
 
-        socket.emit('join', { name, room })
+        socket.emit('join', { name, room }, () => {})
+
+        return () => {
+            socket.emit('disconnect')
+
+            socket.off()
+        }
     }, [ENDPOINT, searchParams])
 
+    useEffect(() => {
+        socket.on('message', (message) => {
+            setMessages([...messages, message])
+        })
+    }, [messages])
+
+    const sendMessage = (event) => {
+        event.preventDefault()
+
+        if (message) {
+            socket.emit('sendMessage', message, () => setMessage(''))
+        }
+    }
+
     return (
-        <div>
-            <div>Chat </div>
+        <div className='outerContainer'>
+            <div className='container'>
+                <InfoBar room={room} />
+                <Input
+                    message={message}
+                    setMessage={setMessage}
+                    sendMessage={sendMessage}
+                />
+            </div>
         </div>
     )
 }
